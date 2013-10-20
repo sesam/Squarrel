@@ -11,6 +11,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 0) do
+ActiveRecord::Schema.define(version: 20131020012158) do
+
+  create_table "squarrel_authentications", force: true do |t|
+    t.string   "nut",        null: false
+    t.string   "orig_ip",    null: false
+    t.string   "ip",         null: false
+    t.integer  "user_id",    null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "squarrel_authentications", ["nut"], name: "index_squarrel_authentications_on_nut", unique: true
 
 end

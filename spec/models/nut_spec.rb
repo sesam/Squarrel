@@ -25,26 +25,60 @@ describe Squarrel::Nut do
     let(:ip) { "127.0.0.1" }
 
     # New nut generated for the user upon request.
-    let(:nut) { Squarrel::Nut.generate(ip) }
+    let!(:nut) { Squarrel::Nut.generate(ip) }
 
     # Generate a pub/sec keypair for the fake user.
     let(:key) { RbNaCl::SigningKey.generate }
     let(:pub_key) { Base64.urlsafe_encode64(key.verify_key.to_bytes).gsub("=", "") }
 
     # Pretend this was the callback URL handed to the user.
-    let(:orig_uri) { "sqrl://example.com/sqrl/login?nut=#{nut}" }
+    def sqrl_uri(nut, sqrlver = nil, sqrlkey = nil)
+      result = "sqrl://example.com/sqrl/login?nut=#{nut}"
+      result += "&sqrlver=#{sqrlver}" unless sqrlver.nil?
+      result += "&sqrlkey=#{sqrlkey}" unless sqrlkey.nil?
+    end
+
+    let(:orig_uri) { sqrl_uri(nut) }
     
     # The URI that is signed by the user and POSTed to.
-    let(:post_uri) { orig_uri + "&sqrlver=1&sqrlkey=#{pub_key}" }
-    
+    let(:post_uri) { sqrl_uri(nut, 1, pub_key) }
+
     # The POST URI, signed by the user's private key.
     def sign(uri)
-      Base64.urlsafe_encode64(key.sign(uri)).gsub("=", " ")
+      Base64.urlsafe_encode64(key.sign(uri)).gsub("=", "")
+    end
+
+    context "with an altered nonce" do
+      it "should complain about the nonce" do
+        split = nut.split(".")
+        nonce = split[1]
+        nonce[0] = nonce[0] == "0" ? "1" : "0"
+        nut = split.join(".")
+
+        uri = sqrl_uri(nut, 1, pub_key)
+        expect {
+          Squarrel::Nut.validate(ip, uri, sign(uri))
+        }.to raise_error Squarrel::BadNut, /nonce/
+      end
+    end
+
+    context "with an altered nut" do
+      it "should complain about the nonce" do
+        split = nut.split(".")
+        val = split[0]
+        val[0] = val[0] == "0" ? "1" : "0"
+        nut = split.join(".")
+
+        uri = sqrl_uri(nut, 1, pub_key)
+        expect {
+          Squarrel::Nut.validate(ip, uri, sign(uri))
+        }.to raise_error Squarrel::BadNut, /nonce/
+      end
     end
 
     context "that has expired" do
-      Timecop.freeze(DateTime.now + 10.minutes) do
-        it "complains about the expired nut" do
+      it "complains about the expired nut" do
+        Timecop.freeze(DateTime.now + 10.minutes) do
           expect {
             Squarrel::Nut.validate(ip, post_uri, sign(post_uri))
           }.to raise_error Squarrel::BadNut, /expired/
@@ -55,12 +89,13 @@ describe Squarrel::Nut do
     context "with a mismatching IP" do
       context "and 'enforce' option" do
         it "complains about the mismatched IP" do
+          uri = post_uri + "&sqrlopt=enforce"
           expect {
             Squarrel::Nut.validate(
               "127.0.0.2",
-              post_uri + "&sqrlopt=enforce",
-              sign(post_uri))
-          }.to raise_error Squarrel::BadNut, /ip/
+              uri,
+              sign(uri))
+          }.to raise_error Squarrel::BadNut, /ip/i
         end
       end
 
@@ -75,12 +110,24 @@ describe Squarrel::Nut do
       end
     end
 
+    context "with a bad signature" do
+      it "should complain about the signature" do
+        expect {
+          Squarrel::Nut.validate(ip, post_uri, sign(post_uri+"#"))
+        }.to raise_error Squarrel::BadNut, /signature/
+      end
+    end
+
     context "with a valid signature" do
       it "should decrypt and validate successfully" do
-        result = Squarrel::Nut.validate(post_uri, sign(post_uri))
+        result = Squarrel::Nut.validate(ip, post_uri, sign(post_uri))
 
         expect(result).not_to be_nil
         expect(result).to be_a Squarrel::Authentication
+        expect(result.nut).to eq(nut)
+        expect(result.ip).to eq(ip)
+        expect(result.orig_ip).to eq(up)
+        expect(result.user).not_to be_nil
       end
     end
   end
