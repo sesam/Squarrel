@@ -4,6 +4,7 @@ require File.expand_path("../dummy/config/environment.rb", __FILE__)
 require 'rspec/rails'
 require 'rspec/autorun'
 require 'factory_girl_rails'
+require 'timecop'
 
 ENGINE_RAILS_ROOT = File.join(File.dirname(__FILE__), "../")
 
