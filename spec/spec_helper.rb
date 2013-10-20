@@ -5,6 +5,8 @@ require 'rspec/rails'
 require 'rspec/autorun'
 require 'factory_girl_rails'
 
+ENGINE_RAILS_ROOT = File.join(File.dirname(__FILE__), "../")
+
 Rails.backtrace_cleaner.remove_silencers!
 
 # Load support files
