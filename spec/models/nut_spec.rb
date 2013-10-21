@@ -3,7 +3,8 @@ require 'spec_helper'
 describe Squarrel::Nut do
   describe "generating a nut" do
     it "should return a message/nonce pair" do
-      expect(Squarrel::Nut.generate("127.0.0.1")).to match(/[0-9a-z]{32,}\.[0-9a-z]{32,}/i)
+      expect(Squarrel::Nut.generate("127.0.0.1").to_s)
+      .to match(/[0-9a-z]{32,}\.[0-9a-z]{32,}/i)
     end
 
     it "should return a different nonce every time" do
@@ -14,7 +15,7 @@ describe Squarrel::Nut do
 
       expect(nuts.length).to eq(10)
 
-      nonces = nuts.map { |n| n.split(".")[0] }
+      nonces = nuts.map { |n| n.to_s.split(".")[0] }
       expect(nonces.length).to eq(10)
       expect(nonces.uniq.length).to eq(10)
     end
@@ -25,7 +26,7 @@ describe Squarrel::Nut do
     let(:ip) { "127.0.0.1" }
 
     # New nut generated for the user upon request.
-    let!(:nut) { Squarrel::Nut.generate(ip) }
+    let!(:nut) { Squarrel::Nut.generate(ip).to_s }
 
     # Generate a pub/sec keypair for the fake user.
     let(:key) { RbNaCl::SigningKey.generate }
@@ -53,9 +54,9 @@ describe Squarrel::Nut do
         split = nut.split(".")
         nonce = split[1]
         nonce[0] = nonce[0] == "0" ? "1" : "0"
-        nut = split.join(".")
+        altered = split.join(".")
 
-        uri = sqrl_uri(nut, 1, pub_key)
+        uri = sqrl_uri(altered, 1, pub_key)
         expect {
           Squarrel::Nut.validate(ip, uri, sign(uri))
         }.to raise_error Squarrel::BadNut, /nonce/
@@ -67,9 +68,9 @@ describe Squarrel::Nut do
         split = nut.split(".")
         val = split[0]
         val[0] = val[0] == "0" ? "1" : "0"
-        nut = split.join(".")
+        altered = split.join(".")
 
-        uri = sqrl_uri(nut, 1, pub_key)
+        uri = sqrl_uri(altered, 1, pub_key)
         expect {
           Squarrel::Nut.validate(ip, uri, sign(uri))
         }.to raise_error Squarrel::BadNut, /nonce/
@@ -123,11 +124,19 @@ describe Squarrel::Nut do
         result = Squarrel::Nut.validate(ip, post_uri, sign(post_uri))
 
         expect(result).not_to be_nil
-        expect(result).to be_a Squarrel::Authentication
-        expect(result.nut).to eq(nut)
+        expect(result).to be_a Squarrel::Nut
+        expect(result.to_s).to eq(nut)
+
         expect(result.ip).to eq(ip)
-        expect(result.orig_ip).to eq(up)
-        expect(result.user).not_to be_nil
+        expect(result.timestamp).not_to be_nil
+        expect(result.timestamp).to be <= Time.now.to_i
+        expect(result.nut.unpack("H*")[0]).to eq(nut.split(".")[0])
+        expect(result.nonce.unpack("H*")[0]).to eq(nut.split(".")[1])
+        expect(result.auth_ip).to eq(ip)
+        expect(result.auth_time).not_to be_nil
+        expect(result.auth_time).to be <= Time.now.to_i
+        expect(result.sqrl_key).not_to be_nil
+        expect(result.sqrl_key).to eq(pub_key)
       end
     end
   end
