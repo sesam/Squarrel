@@ -19,5 +19,22 @@ module Squarrel
     rescue
       nil
     end
+
+    # Completes the authentication handshake by checking for a recorded
+    # authentication with the specified nut.
+    #
+    # ip: Authentication can only be completed by the endpoint that originally
+    # requested the nut.
+    # nut: The nut that was provided (as a string).
+    def self.complete_authentication(ip, nut)
+      auth = Authentication.find_by(nut: nut, orig_ip: ip)
+      if auth.nil?
+        nil
+      else
+        # The nut can only be used once.
+        Authentication.where(nut: nut).destroy_all
+        auth.user
+      end
+    end
   end
 end

@@ -55,7 +55,7 @@ describe Squarrel::User do
   describe "completing authentication" do
     context "user has not previously authenticated" do
       it "should fail" do
-        user = Squarrel::User.complete_authentication(nut.to_s)
+        user = Squarrel::User.complete_authentication(ip, nut.to_s)
         expect(user).to be_nil
       end
     end
@@ -67,27 +67,31 @@ describe Squarrel::User do
 
         altered = nut.to_s
         altered[0] = altered[0] == "0" ? "1" : "0"
-        user = Squarrel::User.complete_authentication(altered)
+        user = Squarrel::User.complete_authentication(ip, altered)
         expect(user).to be_nil
       end
     end
 
     context "user has previously authenticated" do
-      it "should return the user" do
-        user = Squarrel::User.authenticate(ip, uri, sig)
-        expect(user).not_to be_nil
+      before(:each) do
+        Squarrel::User.authenticate(ip, uri, sig)
+      end
 
-        user = Squarrel::User.complete_authentication(nut.to_s)
+      it "should return the user" do
+        user = Squarrel::User.complete_authentication(ip, nut.to_s)
         expect(user).not_to be_nil
       end
 
       it "cannot use the same authentication twice" do
-        Squarrel::User.authenticate(ip, uri, sig)
-
-        user = Squarrel::User.complete_authentication(nut.to_s)
+        user = Squarrel::User.complete_authentication(ip, nut.to_s)
         expect(user).not_to be_nil
 
-        user = Squarrel::User.complete_authentication(nut.to_s)
+        user = Squarrel::User.complete_authentication(ip, nut.to_s)
+        expect(user).to be_nil
+      end
+
+      it "cannot complete authentication from a different endpoint" do
+        user = Squarrel::User.complete_authentication("127.0.0.2", nut.to_s)
         expect(user).to be_nil
       end
     end
