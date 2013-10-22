@@ -12,6 +12,15 @@ describe Squarrel::User do
   let(:nut2) { Squarrel::Nut.validate(ip, uri, sig) }
 
   describe "authenticating" do
+    context "with an invalid signature" do
+      it "should fail" do
+        altered = sig.to_s
+        altered[0] = altered[0] == '0' ? '1' : '0'
+        user = Squarrel::User.authenticate(ip, uri, altered)
+        expect(user).to be_nil
+      end
+    end
+
     context "the first time" do
       it "should create a new user" do
         expect {
