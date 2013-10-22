@@ -153,5 +153,42 @@ describe Squarrel::Nut do
       end
     end
   end
+
+  describe "base 64 encoding" do
+    it "should round-trip without issues" do
+      text = "AQIDBA"
+      bytes = "\x01\x02\x03\x04"
+
+      encoded = Squarrel::Nut.base64_encode(bytes)
+      decoded = Squarrel::Nut.base64_decode(text)
+
+      expect(encoded).to eq(text)
+      expect(decoded).to eq(bytes)
+
+      expect(Squarrel::Nut.base64_decode(encoded)).to eq(bytes)
+      expect(Squarrel::Nut.base64_encode(decoded)).to eq(text)
+    end
+
+    it "should not encode with trailing '='" do
+      expect(Squarrel::Nut.base64_encode("\x01")).to eq("AQ")
+      expect(Squarrel::Nut.base64_encode("\x01\x02")).to eq("AQI")
+      expect(Squarrel::Nut.base64_encode("\x01\x02\x03")).to eq("AQID")
+      expect(Squarrel::Nut.base64_encode("\x01\x02\x03\x04")).to eq("AQIDBA")
+    end
+
+    it "should decode with trailing '='" do
+      expect(Squarrel::Nut.base64_decode("AQ==")).to eq("\x01")
+      expect(Squarrel::Nut.base64_decode("AQI=")).to eq("\x01\x02")
+      expect(Squarrel::Nut.base64_decode("AQID")).to eq("\x01\x02\x03")
+      expect(Squarrel::Nut.base64_decode("AQIDBA==")).to eq("\x01\x02\x03\x04")
+    end
+
+    it "should decode without trailing '='" do
+      expect(Squarrel::Nut.base64_decode("AQ")).to eq("\x01")
+      expect(Squarrel::Nut.base64_decode("AQI")).to eq("\x01\x02")
+      expect(Squarrel::Nut.base64_decode("AQID")).to eq("\x01\x02\x03")
+      expect(Squarrel::Nut.base64_decode("AQIDBA")).to eq("\x01\x02\x03\x04")
+    end
+  end
 end
 

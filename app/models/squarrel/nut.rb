@@ -86,6 +86,18 @@ module Squarrel
       
       new(orig_ip, timestamp, nut, nonce, ip, auth_time, sqrlkey)
     end
+    
+    # Base64-encode some data, trimming trailing "=".
+    def self.base64_encode(data)
+      Base64.urlsafe_encode64(data).gsub("=", "")
+    end
+
+    # Decode some Base64-encoded data.
+    def self.base64_decode(input)
+      # Add trailing "=", if required.
+      input = input + ("=" * (4 - (input.length % 4))) if input.length % 4 != 0
+      Base64.urlsafe_decode64(input)
+    end
 
     attr_reader :auth_ip, :sqrl_key, :ip, :nut, :nonce, :timestamp, :auth_time
 
@@ -106,18 +118,6 @@ module Squarrel
     end
 
     private
-
-    # Base64-encode some data, trimming trailing "=".
-    def self.base64_encode(data)
-      Base64.urlsafe_encode64(data).gsub("=", "")
-    end
-
-    # Decode some Base64-encoded data.
-    def self.base64_decode(input)
-      # Add trailing "=", if required.
-      input = input + ("=" * (4 - (input.length % 4))) if input.length % 4 != 0
-      Base64.urlsafe_decode64(input)
-    end
 
     # Decrypts a message with a known nonce.
     def self.decrypt(message, nonce)
