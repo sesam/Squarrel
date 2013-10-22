@@ -32,13 +32,6 @@ describe Squarrel::Nut do
     let(:key) { RbNaCl::SigningKey.generate }
     let(:pub_key) { Base64.urlsafe_encode64(key.verify_key.to_bytes).gsub("=", "") }
 
-    # Pretend this was the callback URL handed to the user.
-    def sqrl_uri(nut, sqrlver = nil, sqrlkey = nil)
-      result = "sqrl://example.com/sqrl/login?nut=#{nut}"
-      result += "&sqrlver=#{sqrlver}" unless sqrlver.nil?
-      result += "&sqrlkey=#{sqrlkey}" unless sqrlkey.nil?
-    end
-
     let(:orig_uri) { sqrl_uri(nut) }
     
     # The URI that is signed by the user and POSTed to.
@@ -47,6 +40,26 @@ describe Squarrel::Nut do
     # The POST URI, signed by the user's private key.
     def sign(uri)
       Base64.urlsafe_encode64(key.sign(uri)).gsub("=", "")
+    end
+
+    context "with a corrupted signature" do
+      it "should complain about the signature" do
+        uri = sqrl_uri(nut, 1, pub_key)
+        sig = sign(uri)
+        sig[0] = '&'
+        expect {
+          Squarrel::Nut.validate(ip, uri, sig)
+        }.to raise_error Squarrel::BadNut, "Invalid signature."
+      end
+    end
+
+    context "with a corrupted URI" do
+      it "should comlain about the URI" do
+        bad_uri = "sqrl::GAeq4t.4qq.com"
+        expect {
+          Squarrel::Nut.validate(ip, bad_uri, sign(bad_uri))
+        }.to raise_error Squarrel::BadNut, "Invalid URI."
+      end
     end
 
     context "with an altered nonce" do
