@@ -51,4 +51,45 @@ describe Squarrel::User do
       expect(auth.ip).to eq(ip)
     end
   end
+
+  describe "completing authentication" do
+    context "user has not previously authenticated" do
+      it "should fail" do
+        user = Squarrel::User.complete_authentication(nut.to_s)
+        expect(user).to be_nil
+      end
+    end
+
+    context "wrong nut is used" do
+      it "should fail" do
+        user = Squarrel::User.authenticate(ip, uri, sig)
+        expect(user).not_to be_nil
+
+        altered = nut.to_s
+        altered[0] = altered[0] == "0" ? "1" : "0"
+        user = Squarrel::User.complete_authentication(altered)
+        expect(user).to be_nil
+      end
+    end
+
+    context "user has previously authenticated" do
+      it "should return the user" do
+        user = Squarrel::User.authenticate(ip, uri, sig)
+        expect(user).not_to be_nil
+
+        user = Squarrel::User.complete_authentication(nut.to_s)
+        expect(user).not_to be_nil
+      end
+
+      it "cannot use the same authentication twice" do
+        Squarrel::User.authenticate(ip, uri, sig)
+
+        user = Squarrel::User.complete_authentication(nut.to_s)
+        expect(user).not_to be_nil
+
+        user = Squarrel::User.complete_authentication(nut.to_s)
+        expect(user).to be_nil
+      end
+    end
+  end
 end
