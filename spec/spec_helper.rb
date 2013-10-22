@@ -20,3 +20,9 @@ RSpec.configure do |config|
   config.order = "random"
 end
 
+# Generate a SQRL callback URI.
+def sqrl_uri(nut, sqrlver = nil, sqrlkey = nil)
+  result = "sqrl://example.com/sqrl/login?nut=#{nut}"
+  result += "&sqrlver=#{sqrlver}" unless sqrlver.nil?
+  result += "&sqrlkey=#{sqrlkey}" unless sqrlkey.nil?
+end

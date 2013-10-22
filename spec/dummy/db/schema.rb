@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20131020012158) do
+ActiveRecord::Schema.define(version: 20131022001305) do
 
   create_table "squarrel_authentications", force: true do |t|
     t.string   "nut",        null: false
@@ -23,5 +23,13 @@ ActiveRecord::Schema.define(version: 20131020012158) do
   end
 
   add_index "squarrel_authentications", ["nut"], name: "index_squarrel_authentications_on_nut", unique: true
+
+  create_table "squarrel_users", force: true do |t|
+    t.string   "pub_key",    null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "squarrel_users", ["pub_key"], name: "index_squarrel_users_on_pub_key", unique: true
 
 end
