@@ -28,8 +28,13 @@ RSpec.configure do |config|
 end
 
 # Generate a SQRL callback URI.
-def sqrl_uri(nut, sqrlver = nil, sqrlkey = nil)
-  result = "sqrl://example.com/sqrl/login?nut=#{nut}"
+def sqrl_uri(nut, sqrlver = 1, sqrlkey = nil)
+  if defined? squarrel
+    result = squarrel.sqrl_url(protocol: :sqrl, nut: nut)
+  else
+    result = "sqrl://example.com/sqrl/login?nut=#{nut}"
+  end
+
   result += "&sqrlver=#{sqrlver}" unless sqrlver.nil?
   result += "&sqrlkey=#{sqrlkey}" unless sqrlkey.nil?
 end

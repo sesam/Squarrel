@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "timecop"
   s.add_development_dependency "simplecov"
   s.add_development_dependency "fuubar"
+  s.add_development_dependency "httparty"
 
   s.add_runtime_dependency "rbnacl"
 end
