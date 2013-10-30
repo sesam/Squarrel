@@ -93,10 +93,10 @@ describe Squarrel::SqrlController do
               from_ip("127.0.0.1") do
                 nut = authenticated_nut("127.0.0.1")
                 post squarrel.login_path(nut: nut.to_s)
-                expect(response.status_code).to eq(200)
+                expect(response.status).to eq(200)
 
                 post squarrel.login_path(nut: nut.to_s)
-                expect(response.status_code).to eq(403)
+                expect(response.status).to eq(403)
               end
             end
           end

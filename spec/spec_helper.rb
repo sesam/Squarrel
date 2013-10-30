@@ -27,6 +27,15 @@ RSpec.configure do |config|
   config.order = "random"
 end
 
+# Simulates a request from the specified IP address.
+def from_ip(ip, &block)
+  orig = @request.env["REMOTE_ADDR"]
+  @request.env["REMOTE_ADDR"] = ip
+  yield
+ensure
+  @request.env["REMOTE_ADDR"] = orig
+end
+
 # Generate a SQRL callback URI.
 def sqrl_uri(nut, sqrlver = 1, sqrlkey = nil)
   if defined? squarrel
