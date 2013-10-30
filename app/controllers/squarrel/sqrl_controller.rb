@@ -20,18 +20,23 @@ module Squarrel
     
     # Callback for an authentication app.
     def callback
-    end
-
-    # Completes a previous authentication.
-    def login
       ip  = request.remote_ip
       uri = request.original_url
       sig = params.require(:sqrlsig)
 
       user = User.authenticate(ip, uri, sig)
+      status = user.nil? ? 403 : 200
+      render nothing: true, status: status
+    end
+
+    # Completes a previous authentication.
+    def login
+      ip  = request.remote_ip
+      nut = params.require(:nut)
+
+      user = User.complete_authentication(ip, nut)
 
       status = user.nil? ? 403 : 200
-
       render action: "form", status: status
     end
 
