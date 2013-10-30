@@ -24,6 +24,15 @@ module Squarrel
 
     # Completes a previous authentication.
     def login
+      ip  = request.remote_ip
+      uri = request.original_url
+      sig = params.require(:sqrlsig)
+
+      user = User.authenticate(ip, uri, sig)
+
+      status = user.nil? ? 403 : 200
+
+      render action: "form", status: status
     end
 
     private

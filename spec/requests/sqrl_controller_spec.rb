@@ -27,7 +27,7 @@ describe Squarrel::SqrlController do
       end
 
       it "fails" do
-        expect(response.status_code).to eq(403)
+        expect(response.status).to eq(403)
       end
     end
 
@@ -38,7 +38,7 @@ describe Squarrel::SqrlController do
       end
 
       it "succeeds" do
-        expect(response.code).to eq(200)
+        expect(response.status).to eq(200)
       end
 
       context "completing authentication" do
@@ -58,7 +58,7 @@ describe Squarrel::SqrlController do
             from_ip("127.0.0.2") do
               nut = authenticated_nut("127.0.0.1")
               post squarrel.login_path(nut: nut.to_s)
-              expect(response.status_code).to eq(403)
+              expect(response.status).to eq(403)
             end
           end
         end
@@ -68,7 +68,7 @@ describe Squarrel::SqrlController do
             from_ip("127.0.0.1") do
               nut = authenticated_nut("127.0.0.1")
               post squarrel.login_path(nut: nut.to_s)
-              expect(response.status_code).to eq(200)
+              expect(response.status).to eq(200)
             end
           end
 
