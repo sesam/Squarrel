@@ -10,7 +10,7 @@ describe Squarrel::SqrlController do
       
       expect(data["uri"]).not_to be_nil
       expect(data["uri"]).to match SQRL_URI_PATTERN
-      expect(data["uri"]).to start_with squarrel.login_path(protocol: :sqrl)
+      expect(data["uri"]).to start_with squarrel.callback_url(protocol: :sqrl)
     end
   end
 
