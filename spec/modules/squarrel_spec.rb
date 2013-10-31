@@ -12,7 +12,7 @@ describe Squarrel do
           end
         end
 
-        Squarrel.send(:on_user_authenticated, "testing")
+        Squarrel.config.on_user_authenticated("testing")
         expect(arg).to eq("testing")
       end
     end
