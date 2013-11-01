@@ -39,11 +39,6 @@ describe Squarrel::SqrlController do
     context "with a valid signature" do
       before do
         sig = Squarrel::Nut.base64_encode(key.sign(uri))
-
-        # TODO: Need to figure out how to get the URL as the client sees it,
-        # to verify the signature.
-        ActionDispatch::Request.any_instance.stub(:original_url).and_return(uri)
-
         post uri, "sqrlsig=#{sig}"
       end
 
