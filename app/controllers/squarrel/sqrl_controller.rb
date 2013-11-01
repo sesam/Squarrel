@@ -1,4 +1,5 @@
-require_dependency "squarrel/application_controller"
+require 'squarrel'
+require_dependency 'squarrel/application_controller'
 
 module Squarrel
   class SqrlController < ApplicationController
@@ -35,6 +36,7 @@ module Squarrel
       nut = params.require(:nut)
 
       user = User.complete_authentication(ip, nut)
+      Squarrel.config.on_user_authenticated(user) unless user.nil?
 
       status = user.nil? ? 403 : 200
       render action: "form", status: status

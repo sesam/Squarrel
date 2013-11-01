@@ -88,7 +88,6 @@ describe Squarrel::SqrlController do
 
         it "invokes the user_authenticated callback" do
           from_ip("127.0.0.1") do
-            nut = authenticated_nut("127.0.0.1")
             user = nil
             Squarrel.configure do |config|
               config.user_authenticated do |u|
@@ -96,6 +95,7 @@ describe Squarrel::SqrlController do
               end
             end
 
+            nut = authenticated_nut("127.0.0.1")
             post squarrel.login_path(nut: nut.to_s)
             expect(user).not_to be_nil
           end
