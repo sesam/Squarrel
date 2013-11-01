@@ -29,17 +29,14 @@ end
 
 # Simulates a request from the specified IP address.
 def from_ip(ip, &block)
-  orig = @request.env["REMOTE_ADDR"]
-  @request.env["REMOTE_ADDR"] = ip
+  ActionDispatch::Request.any_instance.stub(:remote_ip).and_return(ip)
   yield
-ensure
-  @request.env["REMOTE_ADDR"] = orig
 end
 
 # Generate a SQRL callback URI.
 def sqrl_uri(nut, sqrlver = 1, sqrlkey = nil)
   if defined? squarrel
-    result = squarrel.sqrl_url(protocol: :sqrl, nut: nut)
+    result = squarrel.callback_url(protocol: :sqrl, nut: nut)
   else
     result = "sqrl://example.com/sqrl/login?nut=#{nut}"
   end

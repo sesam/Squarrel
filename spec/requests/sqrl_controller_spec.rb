@@ -18,7 +18,12 @@ describe Squarrel::SqrlController do
     let(:nut) { Squarrel::Nut.generate("127.0.0.1") }
     let(:key) { RbNaCl::SigningKey.generate }
     let(:pub_key) { Squarrel::Nut.base64_encode(key.verify_key.to_bytes) }
-    let(:uri) { sqrl_uri(nut.to_s, 1, pub_key) }
+    let(:uri) do
+      squarrel.callback_url(protocol: "sqrl",
+                            nut: nut.to_s,
+                            sqrlver: 1,
+                            sqrlkey: pub_key)
+    end
 
     context "with an invalid signature" do
       before do
@@ -40,64 +45,63 @@ describe Squarrel::SqrlController do
       it "succeeds" do
         expect(response.status).to eq(200)
       end
+    end
 
-      context "completing authentication" do
-        # Creates and validates a nut.
-        def authenticated_nut(ip)
-          nut = Squarrel::Nut.generate(ip)
-          key = RbNaCl::SigningKey.generate
-          uri = sqrl_uri(nut.to_s, 1, pub_key)
-          sig = Squarrel::Nut.base64_encode(key.sign(uri))
-          Squarrel::User.authenticate(ip, uri, sig)
+    context "completing authentication" do
+      # Creates and validates a nut.
+      def authenticated_nut(ip)
+        nut = Squarrel::Nut.generate(ip)
+        key = RbNaCl::SigningKey.generate
+        uri = sqrl_uri(nut.to_s, 1, pub_key)
+        sig = Squarrel::Nut.base64_encode(key.sign(uri))
+        Squarrel::User.authenticate(ip, uri, sig)
 
-          nut
-        end
+        nut
+      end
         
-        context "from a different IP" do
-          it "fails" do
-            from_ip("127.0.0.2") do
-              nut = authenticated_nut("127.0.0.1")
-              post squarrel.login_path(nut: nut.to_s)
-              expect(response.status).to eq(403)
-            end
+      context "from a different IP" do
+        it "fails" do
+          from_ip("127.0.0.2") do
+            nut = authenticated_nut("127.0.0.1")
+            post squarrel.login_path(nut: nut.to_s)
+            expect(response.status).to eq(403)
+          end
+        end
+      end
+
+      context "from the original IP" do
+        it "succeeds" do
+          from_ip("127.0.0.1") do
+            nut = authenticated_nut("127.0.0.1")
+            post squarrel.login_path(nut: nut.to_s)
+            expect(response.status).to eq(200)
           end
         end
 
-        context "from the original IP" do
-          it "succeeds" do
+        it "invokes the user_authenticated callback" do
+          from_ip("127.0.0.1") do
+            nut = authenticated_nut("127.0.0.1")
+            user = nil
+            Squarrel.configure do |config|
+              config.user_authenticated do |u|
+                user = u
+              end
+            end
+
+            post squarrel.login_path(nut: nut.to_s)
+            expect(user).not_to be_nil
+          end
+        end
+
+        context "subsequent times" do
+          it "fails" do
             from_ip("127.0.0.1") do
               nut = authenticated_nut("127.0.0.1")
               post squarrel.login_path(nut: nut.to_s)
               expect(response.status).to eq(200)
-            end
-          end
-
-          it "invokes the user_authenticated callback" do
-            from_ip("127.0.0.1") do
-              nut = authenticated_nut("127.0.0.1")
-
-              user = nil
-              Squarrel.configure do |config|
-                config.user_authenticated do |u|
-                  user = u
-                end
-              end
 
               post squarrel.login_path(nut: nut.to_s)
-              expect(user).not_to be_nil
-            end
-          end
-
-          context "subsequent times" do
-            it "fails" do
-              from_ip("127.0.0.1") do
-                nut = authenticated_nut("127.0.0.1")
-                post squarrel.login_path(nut: nut.to_s)
-                expect(response.status).to eq(200)
-
-                post squarrel.login_path(nut: nut.to_s)
-                expect(response.status).to eq(403)
-              end
+              expect(response.status).to eq(403)
             end
           end
         end
