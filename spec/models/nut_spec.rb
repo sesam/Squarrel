@@ -30,7 +30,7 @@ describe Squarrel::Nut do
 
     # Generate a pub/sec keypair for the fake user.
     let(:key) { RbNaCl::SigningKey.generate }
-    let(:pub_key) { Base64.urlsafe_encode64(key.verify_key.to_bytes).gsub("=", "") }
+    let(:pub_key) { Squarrel::Nut.base64_encode(key.verify_key.to_bytes) }
 
     let(:orig_uri) { sqrl_uri(nut) }
     
@@ -39,7 +39,7 @@ describe Squarrel::Nut do
 
     # The POST URI, signed by the user's private key.
     def sign(uri)
-      Base64.urlsafe_encode64(key.sign(uri)).gsub("=", "")
+      Squarrel::Nut.base64_encode(key.sign(uri))
     end
 
     context "with a corrupted signature" do

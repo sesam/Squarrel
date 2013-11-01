@@ -39,6 +39,11 @@ describe Squarrel::SqrlController do
     context "with a valid signature" do
       before do
         sig = Squarrel::Nut.base64_encode(key.sign(uri))
+
+        # TODO: Need to figure out how to get the URL as the client sees it,
+        # to verify the signature.
+        ActionDispatch::Request.any_instance.stub(:original_url).and_return(uri)
+
         post uri, "sqrlsig=#{sig}"
       end
 
@@ -52,9 +57,12 @@ describe Squarrel::SqrlController do
       def authenticated_nut(ip)
         nut = Squarrel::Nut.generate(ip)
         key = RbNaCl::SigningKey.generate
+        pub_key = Squarrel::Nut.base64_encode(key.verify_key.to_bytes)
         uri = sqrl_uri(nut.to_s, 1, pub_key)
         sig = Squarrel::Nut.base64_encode(key.sign(uri))
-        Squarrel::User.authenticate(ip, uri, sig)
+        user = Squarrel::User.authenticate(ip, uri, sig)
+
+        raise "Failed to authenticate user" if user.nil?
 
         nut
       end
